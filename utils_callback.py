@@ -23,7 +23,7 @@ def callbacks_during_train(model, dis_x, dis_y, dis_path, net, epoch):
 
 def eval_loss(model, x, y, quality=False):
     preds, DM, GT = [], [], []
-    losses_SFN, losses_MAE, losses_MAPE, losses_MSE = [], [], [], []
+    losses_SFN, losses_MAE, losses_MAPE, losses_RMSE = [], [], [], []
     for idx_pd in range(x.shape[0]):
         pred = model.predict(x[idx_pd:idx_pd+1])
         preds.append(np.squeeze(pred))
@@ -33,12 +33,12 @@ def eval_loss(model, x, y, quality=False):
         losses_SFN.append(np.mean(np.square(preds[idx_pd] - DM[idx_pd])))     # mean of Frobenius norm
         losses_MAE.append(np.abs(np.sum(preds[idx_pd]) - GT[idx_pd]))
         losses_MAPE.append(np.abs(np.sum(preds[idx_pd]) - GT[idx_pd]) / GT[idx_pd])
-        losses_MSE.append(np.square(np.sum(preds[idx_pd]) - GT[idx_pd]))
+        losses_RMSE.append(np.square(np.sum(preds[idx_pd]) - GT[idx_pd]))
 
-    loss_SFN = np.mean(losses_SFN)
+    loss_SFN = np.sum(losses_SFN)
     loss_MAE = np.mean(losses_MAE)
     loss_MAPE = np.mean(losses_MAPE)
-    loss_MSE = np.sqrt(np.mean(losses_MSE))
+    loss_RMSE = np.sqrt(np.mean(losses_RMSE))
     if quality:
         psnr, ssim = [], []
         for idx_pd in range(len(preds)):
@@ -47,5 +47,5 @@ def eval_loss(model, x, y, quality=False):
             ssim_ = compare_ssim(preds[idx_pd], DM[idx_pd], data_range=data_range)
             psnr.append(psnr_)
             ssim.append(ssim_)
-        return loss_MAE, loss_MSE, loss_SFN, loss_MAPE, np.mean(psnr), np.mean(ssim)
-    return loss_MAE, loss_MSE, loss_SFN, loss_MAPE
+        return loss_MAE, loss_RMSE, loss_SFN, loss_MAPE, np.mean(psnr), np.mean(ssim)
+    return loss_MAE, loss_RMSE, loss_SFN, loss_MAPE
