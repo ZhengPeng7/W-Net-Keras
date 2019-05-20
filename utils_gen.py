@@ -1,9 +1,10 @@
 import os
 import cv2
 import h5py
+import scipy
 import numpy as np
 from keras.preprocessing.image import ImageDataGenerator
-from utils_imgproc import smallize_density_map, norm_by_imagenet
+from utils_imgproc import smallize_density_map, fix_singular_shape
 
 
 def gen_paths_img_dm(path_file_root='data/paths_train_val_test', dataset='A'):
@@ -27,19 +28,26 @@ def gen_paths_img_dm(path_file_root='data/paths_train_val_test', dataset='A'):
     return img_paths, dm_paths
 
 
-def gen_var_from_paths(paths, stride=1):
+def gen_var_from_paths(paths, stride=1, unit_len=16):
     vars = []
     format_suffix = paths[0].split('.')[-1]
     if format_suffix == 'h5':
         for ph in paths:
-            vars.append(np.expand_dims(smallize_density_map(h5py.File(ph, 'r')['density'].value, stride=stride), axis=-1))
+            dm = h5py.File(ph, 'r')['density'].value.astype(np.float32)
+            if unit_len:
+                dm = fix_singular_shape(dm, unit_len=unit_len)
+            dm = smallize_density_map(dm, stride=stride)
+            vars.append(np.expand_dims(dm, axis=-1))
     elif format_suffix == 'jpg':
         for ph in paths:
-            vars.append(cv2.cvtColor(cv2.imread(ph), cv2.COLOR_BGR2RGB))
+            raw = cv2.cvtColor(cv2.imread(ph), cv2.COLOR_BGR2RGB).astype(np.float32)
+            if unit_len:
+                raw = fix_singular_shape(raw, unit_len=unit_len)
+            vars.append(raw)
         # vars = norm_by_imagenet(vars)
     else:
         print('Format suffix is wrong.')
-    return np.array(vars).astype(np.float32)
+    return np.array(vars)
 
 
 def gen_density_map_gaussian(im, points, sigma=4):

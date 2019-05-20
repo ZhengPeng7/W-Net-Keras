@@ -25,10 +25,10 @@ def eval_loss(model, x, y, quality=False):
     preds, DM, GT = [], [], []
     losses_SFN, losses_MAE, losses_MAPE, losses_RMSE = [], [], [], []
     for idx_pd in range(x.shape[0]):
-        pred = model.predict(x[idx_pd:idx_pd+1])
+        pred = model.predict(np.array([x[idx_pd]]))
         preds.append(np.squeeze(pred))
-        DM.append(np.squeeze(y[idx_pd:idx_pd+1]))
-        GT.append(round(np.sum(y[idx_pd:idx_pd+1])))    # To make sure the GT is an integral value
+        DM.append(np.squeeze(np.array([y[idx_pd]])))
+        GT.append(round(np.sum(np.array([y[idx_pd]]))))    # To make sure the GT is an integral value
     for idx_pd in range(len(preds)):
         losses_SFN.append(np.mean(np.square(preds[idx_pd] - DM[idx_pd])))     # mean of Frobenius norm
         losses_MAE.append(np.abs(np.sum(preds[idx_pd]) - GT[idx_pd]))
